@@ -1,4 +1,0 @@
-{
-    python.defaultInterpreterPath CUsersdenniDownloadsAutomated-Timetable-Generator.venvScriptspython.exe,
-    python.terminal.activateEnvironment true
-}
