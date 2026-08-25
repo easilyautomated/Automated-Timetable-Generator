@@ -1,10 +1,9 @@
 import os
-from flask import Flask
+from flask import Flask, app
 from .database import close_database, init_database_command
 from flask_login import LoginManager
 from app.models.user import User
 from app.database import get_database, close_database, init_database_command
-
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -31,7 +30,8 @@ def create_app():
         if row is None:
             return None
         return User(row["user_id"], row["username"], row["password_hash"], row["role"], row["linked_id"])  # Return the User object
+
+    from app.routes.auth import bp as auth_bp
+    app.register_blueprint(auth_bp)
     
     return app
-
-create_app()
