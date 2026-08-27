@@ -1,0 +1,13 @@
+<h1>Rooms</h1>
+<ul>
+{% for room in rooms %}
+    <li>
+        {{ room["name"] }} (capacity: {{ room["capacity"] }}, type: {{ room["room_type"] }})
+        — <a href="{{ url_for('admin.edit_room', room_id=room['room_id']) }}">Edit</a>
+        <form method="POST" action="{{ url_for('admin.delete_room', room_id=room['room_id']) }}" style="display:inline;">
+            <button type="submit">Delete</button>
+        </form>
+    </li>
+{% endfor %}
+</ul>
+<a href="{{ url_for('admin.add_room') }}">Add room</a>

@@ -31,7 +31,9 @@ def create_app():
             return None
         return User(row["user_id"], row["username"], row["password_hash"], row["role"], row["linked_id"])  # Return the User object
 
-    from app.routes.auth import bp as auth_bp
+    from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp)
+    from app.routes.admin import admin_bp
+    app.register_blueprint(admin_bp)
     
     return app

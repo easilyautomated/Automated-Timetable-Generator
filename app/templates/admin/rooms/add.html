@@ -1,0 +1,16 @@
+<h1>Add Room</h1>
+
+{% if errors %}
+    <ul style="color: red;">
+    {% for error in errors %}
+        <li>{{ error }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<form method="POST">
+    <input type="text" name="name" value="{{ name or '' }}" placeholder="Room name">
+    <input type="number" name="capacity" value="{{ capacity or '' }}" placeholder="Capacity">
+    <input type="text" name="room_type" value="{{ room_type or '' }}" placeholder="Room type (standard/lab/art/music/gym/DT)">
+    <button type="submit">Save</button>
+</form>

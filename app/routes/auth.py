@@ -3,9 +3,9 @@ from flask_login import login_user, logout_user, login_required
 from app.database import get_database
 from app.models.user import User
 
-bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__)
 
-@bp.route('/login', methods=['GET', 'POST'])
+@auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
         return render_template('auth/login.html')
@@ -36,7 +36,7 @@ def login():
         }
     return redirect(url_for(dashboard_routes[user.role]))
 
-@bp.route('/logout')
+@auth_bp.route('/logout')
 @login_required
 def logout():
     logout_user()

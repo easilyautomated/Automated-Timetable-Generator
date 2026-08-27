@@ -11,7 +11,7 @@ class User(UserMixin):
 
     # Check if the epassword entered by user matches the encrypted password in database.
     def check_password(self, password):
-        return True if bcrypt.checkpw(password.encode('utf-8'), self.password_hash) else False
+        return True if bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8')) else False
 
     def get_id(self):
         return str(self.user_id)
