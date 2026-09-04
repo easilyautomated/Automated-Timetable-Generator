@@ -1,0 +1,17 @@
+<h1>Option Blocks</h1>
+
+{% for block_name, subject_names in blocks.items() %}
+    <div>
+        <h3>{{ block_name }}</h3>
+        <ul>
+            {% for subject_name in subject_names %}
+                <li>{{ subject_name }}</li>
+            {% endfor %}
+        </ul>
+        <form method="POST" action="{{ url_for('admin.delete_option_block', block_name=block_name) }}">
+            <button type="submit">Delete block</button>
+        </form>
+    </div>
+{% endfor %}
+
+<a href="{{ url_for('admin.add_option_block') }}">Add option block</a>

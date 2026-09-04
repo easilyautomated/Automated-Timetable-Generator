@@ -1,0 +1,28 @@
+<h1>Edit Student Group</h1>
+
+{% if errors %}
+    <ul style="color: red;">
+    {% for error in errors %}
+        <li>{{ error }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<form method="POST">
+    <input type="text" name="student_group_name" value="{{ student_group['name'] }}">
+    <input type="number" name="year_group" value="{{ student_group['year_group'] }}">
+    <input type="number" name="group_size" value="{{ student_group['group_size'] }}">
+
+    <fieldset>
+        <legend>Subjects</legend>
+        {% for subject in subjects %}
+            <label>
+                <input type="checkbox" name="subjects" value="{{ subject['subject_id'] }}"
+                    {% if subject['subject_id']|string in selected_subject_ids|map('string')|list %}checked{% endif %}>
+                {{ subject['name'] }}
+            </label><br>
+        {% endfor %}
+    </fieldset>
+
+    <button type="submit">Save</button>
+</form>

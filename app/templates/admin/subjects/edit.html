@@ -1,0 +1,25 @@
+<h1>Edit Subject</h1>
+
+{% if errors %}
+    <ul style="color: red;">
+    {% for error in errors %}
+        <li>{{ error }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<form method="POST">
+    <input type="text" name="subject_name" value="{{ subject['name'] }}">
+    <input type="number" name="periods_per_week" value="{{ subject['periods_per_week'] }}">
+
+    <select name="required_room_type">
+        <option value="standard" {% if subject['required_room_type'] == "standard" %}selected{% endif %}>Standard</option>
+        <option value="lab" {% if subject['required_room_type'] == "lab" %}selected{% endif %}>Lab</option>
+        <option value="art" {% if subject['required_room_type'] == "art" %}selected{% endif %}>Art</option>
+        <option value="music" {% if subject['required_room_type'] == "music" %}selected{% endif %}>Music</option>
+        <option value="gym" {% if subject['required_room_type'] == "gym" %}selected{% endif %}>Gym</option>
+        <option value="DT" {% if subject['required_room_type'] == "DT" %}selected{% endif %}>DT</option>
+    </select>
+
+    <button type="submit">Save</button>
+</form>

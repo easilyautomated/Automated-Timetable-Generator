@@ -1,0 +1,25 @@
+<h1>Add Option Block</h1>
+
+{% if errors %}
+    <ul style="color: red;">
+    {% for error in errors %}
+        <li>{{ error }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<form method="POST">
+    <input type="text" name="block_name" value="{{ block_name or '' }}" placeholder="Block name">
+
+    <fieldset>
+        <legend>Subjects in this block</legend>
+        {% for subject in subjects %}
+            <label>
+                <input type="checkbox" name="subjects" value="{{ subject['subject_id'] }}">
+                {{ subject['name'] }}
+            </label><br>
+        {% endfor %}
+    </fieldset>
+
+    <button type="submit">Save</button>
+</form>

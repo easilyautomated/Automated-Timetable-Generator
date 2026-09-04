@@ -1,0 +1,13 @@
+<h1>Student Groups</h1>
+<ul>
+{% for group in student_groups %}
+    <li>
+        {{ group["name"] }} (Year {{ group["year_group"] }}, size: {{ group["group_size"] }})
+        — <a href="{{ url_for('admin.edit_student_group', group_id=group['group_id']) }}">Edit</a>
+        <form method="POST" action="{{ url_for('admin.delete_student_group', group_id=group['group_id']) }}" style="display:inline;">
+            <button type="submit">Delete</button>
+        </form>
+    </li>
+{% endfor %}
+</ul>
+<a href="{{ url_for('admin.add_student_group') }}">Add student group</a>

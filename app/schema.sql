@@ -108,3 +108,10 @@ CREATE TABLE IF NOT EXISTS lesson_attendance (
     FOREIGN KEY (lesson_assignment_id) REFERENCES lesson_assignments(lesson_assignment_id),
     FOREIGN KEY (student_id) REFERENCES students(student_id)
 );
+
+CREATE TABLE IF NOT EXISTS option_blocks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    block_name TEXT NOT NULL,
+    subject_id INTEGER NOT NULL,
+    FOREIGN KEY (subject_id) REFERENCES subjects(subject_id)
+);

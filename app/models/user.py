@@ -9,7 +9,7 @@ class User(UserMixin):
         self.role = role
         self.linked_id = linked_id
 
-    # Check if the epassword entered by user matches the encrypted password in database.
+    # Check if the password entered by user matches the encrypted password in database.
     def check_password(self, password):
         return True if bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8')) else False
 
