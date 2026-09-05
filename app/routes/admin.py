@@ -466,7 +466,7 @@ def delete_option_block(block_name):
     database.commit()
     return redirect(url_for('admin.list_option_blocks'))
 
-# CVS IMPORT
+# CSV IMPORTS
 @admin_bp.route('/teachers/import', methods=['GET', 'POST'])
 @role_required('admin')
 def import_teachers():
@@ -541,3 +541,62 @@ def import_teachers():
 
         database.commit()
         return render_template('admin/teachers/import_results.html', success_count=success_count, row_errors=row_errors)
+
+
+@admin_bp.route('/groups/import', methods=['GET', 'POST'])
+@role_required('admin')
+def import_student_groups():
+    if request.method == 'GET':
+        return render_template('admin/student_groups/import.html')
+    
+    else:  # POST method
+        file = request.files['csv_file']
+        content = file.stream.read().decode('utf-8')
+        reader = csv.DictReader(content.splitlines())
+            
+        database = get_database()
+        valid_subject_names = [row['subject_name'] for row in database.execute("SELECT subject_name FROM subjects").fetchall()]
+
+        success_count = 0
+        row_errors = []
+
+        for row_number, row in enumerate(reader, start=2):  # start=2 because row 1 is the header
+            student_group_name = row['student_group_name'].strip()
+            year_group = row['year_group'].strip()
+            group_size = row['group_size'].strip()
+            subjects = [s.strip() for s in row['subjects'].split(';') if s.strip()]
+
+            errors = []
+
+            if not student_group_name:
+                errors.append("Student group name is required.")
+            if not year_group.isdigit() or int(year_group) <= 0:
+                errors.append("Year group must be a positive integer.")
+            if not group_size.isdigit() or int(group_size) <= 0:
+                errors.append("Group size must be a positive integer.")
+
+            # Subject Validation: Check that each subject exists in the database.
+            for subject_name in subjects:
+                if subject_name not in valid_subject_names:
+                    errors.append(f"Subject '{subject_name}' does not exist.")
+
+            if errors:
+                row_errors.append({"row": row_number, "errors": errors})
+            else:
+                cursor = database.execute(
+                    "INSERT INTO student_groups (name, year_group, group_size) VALUES (?, ?, ?)",
+                    (student_group_name, int(year_group), int(group_size))
+                )
+                new_group_id = cursor.lastrowid
+
+                for subject_name in subjects:
+                    subject_row = database.execute(
+                        "SELECT subject_id FROM subjects WHERE subject_name = ?", (subject_name,)
+                    ).fetchone()
+                    database.execute(
+                        "INSERT INTO group_subjects (group_id, subject_id) VALUES (?, ?)",
+                        (new_group_id, subject_row["subject_id"])
+                    )
+                success_count += 1
+        database.commit()
+        return render_template('admin/student_groups/import_results.html', success_count=success_count, row_errors=row_errors)
