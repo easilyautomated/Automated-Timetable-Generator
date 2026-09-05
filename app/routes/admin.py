@@ -553,7 +553,8 @@ def import_student_groups():
         file = request.files['csv_file']
         content = file.stream.read().decode('utf-8')
         reader = csv.DictReader(content.splitlines())
-            
+        print("FIELDNAMES:", reader.fieldnames)
+        
         database = get_database()
         valid_subject_names = [row['subject_name'] for row in database.execute("SELECT subject_name FROM subjects").fetchall()]
 
@@ -583,20 +584,14 @@ def import_student_groups():
             if errors:
                 row_errors.append({"row": row_number, "errors": errors})
             else:
-                cursor = database.execute(
-                    "INSERT INTO student_groups (name, year_group, group_size) VALUES (?, ?, ?)",
+                cursor = database.execute("INSERT INTO student_groups (student_group_name, year_group, group_size) VALUES (?, ?, ?)",
                     (student_group_name, int(year_group), int(group_size))
                 )
                 new_group_id = cursor.lastrowid
 
                 for subject_name in subjects:
-                    subject_row = database.execute(
-                        "SELECT subject_id FROM subjects WHERE subject_name = ?", (subject_name,)
-                    ).fetchone()
-                    database.execute(
-                        "INSERT INTO group_subjects (group_id, subject_id) VALUES (?, ?)",
-                        (new_group_id, subject_row["subject_id"])
-                    )
+                    subject_row = database.execute("SELECT subject_id FROM subjects WHERE subject_name = ?", (subject_name,)).fetchone()
+                    database.execute("INSERT INTO group_subjects (student_group_id, subject_id) VALUES (?, ?)",(new_group_id, subject_row["subject_id"]))
                 success_count += 1
         database.commit()
         return render_template('admin/student_groups/import_results.html', success_count=success_count, row_errors=row_errors)
