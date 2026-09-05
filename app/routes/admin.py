@@ -5,9 +5,14 @@ from webbrowser import get
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.database import get_database
 from app.auth import role_required
-import database
+import csv
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+@admin_bp.route('/dashboard')
+@role_required('admin')
+def dashboard():
+    return "Admin dashboard placeholder"
 
 @admin_bp.route('/teachers')
 @role_required('admin')
@@ -217,16 +222,14 @@ def add_subject():
         database = get_database()
 
         if not errors:
-            existing = database.execute(
-                "SELECT COUNT(*) FROM subjects WHERE name = ?", (subject_name,)
-            ).fetchone()[0]
+            existing = database.execute("SELECT COUNT(*) FROM subjects WHERE subject_name = ?", (subject_name,)).fetchone()[0]
             if existing > 0:
                 errors.append(f"A subject named '{subject_name}' already exists. Subject names must be unique.")
 
         if errors:
             return render_template('admin/subjects/add.html', errors=errors, subject_name=subject_name)
 
-        database.execute("INSERT INTO subjects (name) VALUES (?)", (subject_name,))
+        database.execute("INSERT INTO subjects (subject_name, periods_per_week, required_room_type) VALUES (?, ?, ?)",(subject_name, int(periods_per_week), required_room_type))
         database.commit()
         return redirect(url_for('admin.list_subjects'))
 
@@ -261,10 +264,7 @@ def edit_subject(subject_id):
         if errors:
             return render_template('admin/subjects/edit.html', errors=errors, subject={"subject_id": subject_id, "name": subject_name, "periods_per_week": periods_per_week, "required_room_type": required_room_type})
 
-        database.execute(
-            "UPDATE subjects SET name = ?, periods_per_week = ?, required_room_type = ? WHERE subject_id = ?",
-            (subject_name, periods_per_week, required_room_type, subject_id)
-        )
+        database.execute("INSERT INTO subjects (subject_name, periods_per_week, required_room_type) VALUES (?, ?, ?)",(subject_name, int(periods_per_week), int(required_room_type)))
         database.commit()
         return redirect(url_for('admin.list_subjects'))
 
@@ -465,3 +465,79 @@ def delete_option_block(block_name):
     database.execute("DELETE FROM option_blocks WHERE block_name = ?", (block_name,))
     database.commit()
     return redirect(url_for('admin.list_option_blocks'))
+
+# CVS IMPORT
+@admin_bp.route('/teachers/import', methods=['GET', 'POST'])
+@role_required('admin')
+def import_teachers():
+    if request.method == 'GET':
+        return render_template('admin/teachers/import.html')
+
+    else:  # POST method
+        file = request.files['csv_file']
+        content = file.stream.read().decode('utf-8')
+        reader = csv.DictReader(content.splitlines())
+
+        database = get_database()
+        valid_subject_names = [row['subject_name'] for row in database.execute("SELECT subject_name FROM subjects").fetchall()]
+
+        success_count = 0
+        row_errors = []
+
+        for row_number, row in enumerate(reader, start=2):  # start=2 because row 1 is the header
+            full_name = row['full_name'].strip()
+            max_periods_per_day = row['max_periods_per_day'].strip()
+            qualified_subjects = [s.strip() for s in row['qualified_subjects'].split(';') if s.strip()]
+            unavailable = [u.strip() for u in row['unavailable'].split(';') if u.strip()]
+
+            errors = []
+
+            if not full_name:
+                errors.append("Full name is required.")
+
+            if not max_periods_per_day.isdigit() or int(max_periods_per_day) <= 0:
+                errors.append("Max periods per day must be a positive number.")
+
+            # Subject Validation: Check that each qualified subject exists in the database.
+            for subject_name in qualified_subjects:
+                if subject_name not in valid_subject_names:
+                    errors.append(f"Subject '{subject_name}' does not exist.")
+
+            # Teacher Availability Validation: Check that each unavailable slot is in the correct "day:period" format and within valid ranges.
+            for slot in unavailable:
+                if ':' not in slot:
+                    errors.append(f"Invalid day:period format: '{slot}'.")
+                    continue
+                day_str, period_str = slot.split(':')
+                if not day_str.isdigit() or not period_str.isdigit():
+                    errors.append(f"Invalid day:period format: '{slot}'.")
+                    continue
+                day, period = int(day_str), int(period_str)
+                if not (1 <= day <= 5) or not (1 <= period <= 10):
+                    errors.append(f"Day/period out of range: '{slot}'.")
+
+            if errors:
+                row_errors.append({"row": row_number, "errors": errors})
+            else:
+                cursor = database.execute("INSERT INTO teachers (full_name, max_periods_per_day) VALUES (?, ?)",(full_name, int(max_periods_per_day)))
+                new_teacher_id = cursor.lastrowid
+
+                for slot in unavailable:
+                    day_str, period_str = slot.split(':')
+                    database.execute(
+                        "INSERT INTO teacher_availability (teacher_id, day, period) VALUES (?, ?, ?)",
+                        (new_teacher_id, int(day_str), int(period_str))
+                    )
+
+                for subject_name in qualified_subjects:
+                    subject_row = database.execute(
+                        "SELECT subject_id FROM subjects WHERE subject_name = ?", (subject_name,)
+                    ).fetchone()
+                    database.execute(
+                        "INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES (?, ?)",
+                        (new_teacher_id, subject_row["subject_id"])
+                    )
+                success_count += 1
+
+        database.commit()
+        return render_template('admin/teachers/import_results.html', success_count=success_count, row_errors=row_errors)

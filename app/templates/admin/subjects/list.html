@@ -2,7 +2,7 @@
 <ul>
 {% for subject in subjects %}
     <li>
-        {{ subject["name"] }} ({{ subject["periods_per_week"] }} periods/week, requires: {{ subject["required_room_type"] }})
+        {{ subject["subject_name"] }} ({{ subject["periods_per_week"] }} periods/week, requires: {{ subject["required_room_type"] }})
         — <a href="{{ url_for('admin.edit_subject', subject_id=subject['subject_id']) }}">Edit</a>
         <form method="POST" action="{{ url_for('admin.delete_subject', subject_id=subject['subject_id']) }}" style="display:inline;">
             <button type="submit">Delete</button>
